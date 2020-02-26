@@ -1,0 +1,40 @@
+{
+  "name": "jwt_auth_api",
+  "version": "0.0.0",
+  "description": "helixious <helixious@protonmail.com>",
+  "main": "api/api.js",
+  "scripts": {
+    "test": "nodemon api/api.js",
+    "test2": "node api/controllers/person.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/helixious/jwt_auth_api.git"
+  },
+  "keywords": [
+    "jwt",
+    "node",
+    "postgres"
+  ],
+  "author": "sle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/helixious/jwt_auth_api/issues"
+  },
+  "homepage": "https://github.com/helixious/jwt_auth_api#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "faker": "^4.1.0",
+    "graphql": "^14.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "pg": "^7.18.2",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^5.21.5",
+    "underscore": "^1.9.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
