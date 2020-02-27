@@ -2,8 +2,52 @@ require('dotenv').config();
 const jwt =  require("jsonwebtoken");
 const crypto = require('crypto');
 const app = require('express')();
+const {ApolloServer, gql} = require('apollo-server-express');
+const Faker = require('faker');
+
 const bodyParser = require('body-parser');
 const _ = require('underscore');
+
+
+const {buildSchema} = require('graphql');
+const expressGraphql = require('express-graphql');
+const port = process.env.PORT;
+
+
+// database
+const db = require('./config/database');
+const User = require('./models/user');
+const Role = require('./models/role');
+const App = require('./models/app');
+const UserRole = require('./models/user_role');
+
+User.hasMany(Role, {foreignKey: 'role_id'});
+Role.belongsTo(App, {foreignKey: 'app_id'});
+
+UserRole.belongsTo(User, {foreignKey: 'user_id'});
+UserRole.belongsTo(Role, {foreignKey: 'role_id', constraints: false});
+
+db.authenticate().then(() => console.log('Database connected...'))
+.catch(err => {
+    console.log('Error: ' + err);
+    process.exit(1);
+});
+
+
+function createDummyUsers(userCount){
+    try {
+        _.times(userCount, () => {
+            User.create({
+                username: Faker.internet.userName(),
+                email: Faker.internet.email(),
+                type: Faker.commerce.department(),
+                state: 'active'
+            })
+        });
+    } catch(e) {
+        console.log(e);
+    }
+};
 
 function keygen() {
     return crypto.randomBytes(64).toString('hex');
@@ -65,7 +109,44 @@ class Authorization {
 const auth = new Authorization;
 // let user = {name: 'stephane le', email:'sle@helixious.com'};
 
+
+
+const typeDefs = gql
+
+// GraphQL Schema
+var schema = buildSchema(`
+    type Query {
+        userById(id: Int!): User
+
+    }
+
+    type User {
+        id: Int
+        username: String
+        role: String
+    }
+`);
+
+
+// Root resolver
+var root = {
+    message: () => 'Request OK'
+};
+
+
+
 app.use(bodyParser.json());
+app.use('/graphql', expressGraphql({
+    schema: schema,
+    rootValue: root,
+    graphiql: true // set false for production
+}));
+
+
+
+
+
+// Create an express server and a GraphQL endpoint
 
 app.post('/login', (req, res) => {    
     // username, userId, appId, roleId
@@ -85,8 +166,12 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.listen(3000);
+app.listen(port, () => console.log(`GraphQL Server running on localhost:${port}/graphql`));
 
+(async () => {
+    await db.sync({force: true}); //{ force: true }
+    createDummyUsers(10);
+})();
 
 
 // auth.createAccessToken(user).then(aToken => {
