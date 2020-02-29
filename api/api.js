@@ -1,18 +1,21 @@
 require('dotenv').config();
 const jwt =  require("jsonwebtoken");
 const crypto = require('crypto');
-const app = require('express')();
-const {ApolloServer, gql} = require('apollo-server-express');
-const Faker = require('faker');
 
+
+const app = require('express')();
 const bodyParser = require('body-parser');
+const {graphqlExpress, graphiqlExpress} = require('apollo-server-express');
+const Faker = require('faker');
+const typeDefs = require('./schemas/schema');
+
+
 const _ = require('underscore');
 
 
 const {buildSchema} = require('graphql');
-const expressGraphql = require('express-graphql');
+// const expressGraphql = require('express-graphql');
 const port = process.env.PORT;
-
 
 // database
 const db = require('./config/database');
@@ -27,11 +30,6 @@ Role.belongsTo(App, {foreignKey: 'app_id'});
 UserRole.belongsTo(User, {foreignKey: 'user_id'});
 UserRole.belongsTo(Role, {foreignKey: 'role_id', constraints: false});
 
-db.authenticate().then(() => console.log('Database connected...'))
-.catch(err => {
-    console.log('Error: ' + err);
-    process.exit(1);
-});
 
 
 function createDummyUsers(userCount){
@@ -105,13 +103,16 @@ class Authorization {
     }
 }
 
-
+db.authenticate().then(() => console.log('Database connected...'))
+.catch(err => {
+    console.log('Error: ' + err);
+    process.exit(1);
+});
 const auth = new Authorization;
 // let user = {name: 'stephane le', email:'sle@helixious.com'};
 
 
 
-const typeDefs = gql
 
 // GraphQL Schema
 var schema = buildSchema(`
@@ -127,51 +128,61 @@ var schema = buildSchema(`
     }
 `);
 
-
-// Root resolver
-var root = {
-    message: () => 'Request OK'
-};
-
-
-
-app.use(bodyParser.json());
-app.use('/graphql', expressGraphql({
-    schema: schema,
-    rootValue: root,
-    graphiql: true // set false for production
+app.use('graphiql', graphiqlExpress({
+    endpointURL: '/graphql'
 }));
 
+app.user('/graphql', bodyParser.json(), graphqlExpress({}));
+app.listen(port, () => console.log(`GraphQL Server running on localhost:${port}/graphql`));
 
 
+// const server = new ApolloServer({ typeDefs });
+// server.listen().then(({ url }) => {
+//     console.log(`🚀 Server ready at ${url}`);
+// });
+
+
+
+// // Root resolver
+// var root = {
+//     message: () => 'Request OK'
+// };
+
+// app.use(bodyParser.json());
+// app.use('/graphql', expressGraphql({
+//     schema: schema,
+//     rootValue: root,
+//     graphiql: true // set false for production
+// }));
 
 
 // Create an express server and a GraphQL endpoint
 
-app.post('/login', (req, res) => {    
-    // username, userId, appId, roleId
-    let user = req.body;
-    console.log(user)
+// app.post('/login', (req, res) => {    
+//     // username, userId, appId, roleId
+//     let user = req.body;
+//     console.log(user)
 
-    // if request already includes access token => validate token
+//     // if request already includes access token => validate token
 
-    auth.createAccessToken(user, (err, aToken) => {
-        if(!err) {
-            auth.createRefreshToken(user, (err, rToken) => {
-                res.status(500).json(!err ? {access_token:aToken, refresh_token:rToken} : {error:err})
-            });
-        } else {
-            res.status(500).json({error:err})
-        }
-    });
-});
+//     auth.createAccessToken(user, (err, aToken) => {
+//         if(!err) {
+//             auth.createRefreshToken(user, (err, rToken) => {
+//                 res.status(500).json(!err ? {access_token:aToken, refresh_token:rToken} : {error:err})
+//             });
+//         } else {
+//             res.status(500).json({error:err})
+//         }
+//     });
+// });
 
-app.listen(port, () => console.log(`GraphQL Server running on localhost:${port}/graphql`));
+// app.listen(port, () => console.log(`GraphQL Server running on localhost:${port}/graphql`));
 
-(async () => {
-    await db.sync({force: true}); //{ force: true }
-    createDummyUsers(10);
-})();
+// (async () => {
+//     await db.sync({force: true}); //{ force: true }
+//     createDummyUsers(10);
+// })();
+
 
 
 // auth.createAccessToken(user).then(aToken => {
